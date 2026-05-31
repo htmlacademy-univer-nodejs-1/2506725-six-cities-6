@@ -46,11 +46,13 @@ const Property = (): JSX.Element | null => {
     }
   }, [params, dispatch]);
 
+  const offerCityName = offer?.city.name;
+
   useEffect(() => {
-    if (offer) {
-      dispatch(fetchPremiumOffers(offer.city.name));
+    if (offerCityName) {
+      dispatch(fetchPremiumOffers(offerCityName));
     }
-  }, [dispatch, offer]);
+  }, [dispatch, offerCityName]);
 
   if (isOfferLoading) {
     return <Spinner />;

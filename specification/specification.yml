@@ -42,6 +42,24 @@ paths:
           description: Пользователь с таким email уже существует!
 
   /users/login:
+    get:
+      tags:
+        - auth
+      summary: Проверка состояния пользователя
+      description: Проверка JWT-токена и получение информации о текущем пользователе.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Пользователь авторизован.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/id"
+                  - $ref: "#/components/schemas/createUser"
+        "401":
+          description: Пользователь не авторизован!
     post:
       tags:
         - auth
@@ -113,27 +131,7 @@ paths:
         "401":
           description: Пользователь не авторизован!
 
-  /users/me:
-    get:
-      tags:
-        - users
-      summary: Получение информации о текущем пользователе
-      description: Получение информации о текущем авторизованном пользователе.
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Информация о пользователе успешно получена
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/id"
-                  - $ref: "#/components/schemas/createUser"
-        "401":
-          description: Пользователь не авторизован!
-
-  /users/me/favorites:
+  /offers/me/favorites:
     get:
       tags:
         - offers
@@ -282,7 +280,7 @@ paths:
       tags:
         - offers
       summary: Получение списка премиальных объявлений в городе.
-      description: Получение списка всех премиальных объявлений. Не более 3 штук.
+      description: Получение списка премиальных объявлений в выбранном городе. Не более 3 штук.
       parameters:
         - name: city
           in: query
@@ -483,12 +481,12 @@ components:
           type: string
           enum: [Paris, Cologne, Brussels, Amsterdam, Hamburg, Dusseldorf]
           example: "Paris"
-        previewImage:
+        preview:
           type: string
           format: uri
           maxLength: 500
           example: "https://example.com/preview.jpg"
-        photos:
+        images:
           type: array
           minItems: 6
           maxItems: 6
@@ -545,26 +543,21 @@ components:
                 Towels,
                 Fridge,
               ]
-        userId:
+        authorId:
           type: string
-          format: uuid
-          maxLength: 36
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        commentCount:
+          example: "507f1f77bcf86cd799439011"
+        commentsCount:
           type: integer
           format: int32
           example: 5
-        location:
-          type: object
-          properties:
-            latitude:
-              type: number
-              format: float
-              example: 48.85661
-            longitude:
-              type: number
-              format: float
-              example: 2.351499
+        coordinates:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: number
+            format: float
+          example: [48.85661, 2.351499]
 
     comment:
       type: object

@@ -8,7 +8,7 @@ export const CITIES = [
   'Hamburg',
   'Dusseldorf',
 ];
-export const TYPES = ['Apartment', 'Room', 'House', 'Hotel'] as const;
+export const TYPES = ['apartment', 'room', 'house', 'hotel'] as const;
 export const GOODS = [
   'Breakfast',
   'Air conditioning',
@@ -27,8 +27,8 @@ export const URL_MARKER_CURRENT = 'img/pin-active.svg';
 export const ZOOM = 13;
 
 export const MAX_COMMENTS = 10;
-export const MIN_COMMENT_LENGTH = 50;
-export const MAX_COMMENT_LENGTH = 300;
+export const MIN_COMMENT_LENGTH = 5;
+export const MAX_COMMENT_LENGTH = 1024;
 
 
 export enum AppRoute {
@@ -51,6 +51,7 @@ export enum ApiRoute {
   Comments = '/comments',
   Favorite = '/favorite',
   Premium = '/premium',
+  PremiumOffers = '/offers/premium',
   FavoriteOffers = '/offers/me/favorites',
 }
 

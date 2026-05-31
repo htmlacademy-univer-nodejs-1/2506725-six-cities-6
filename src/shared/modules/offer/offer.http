@@ -18,7 +18,7 @@ Content-Type: application/json
   "isPremium":true,
   "isFavorite":true,
   "rating":5,
-  "type":"Apartment",
+  "type":"apartment",
   "authorId": "79cab3915b676cb07b52e135",
   "city":"Paris"
 }

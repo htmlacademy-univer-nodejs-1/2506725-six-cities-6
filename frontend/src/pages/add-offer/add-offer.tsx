@@ -10,7 +10,7 @@ const emptyOffer: NewOffer = {
   city: { name: CITIES[0], location: CityLocation[CITIES[0]] },
   previewImage: '',
   isPremium: false,
-  type: 'Apartment',
+  type: 'apartment',
   bedrooms: 1,
   maxAdults: 1,
   price: 100,

@@ -197,7 +197,7 @@ const OfferForm = <T extends Offer | NewOffer>({
             id="price"
             required
             min={100}
-            max={200000}
+            max={100000}
             defaultValue={price}
           />
         </div>

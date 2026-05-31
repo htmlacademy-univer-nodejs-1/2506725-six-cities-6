@@ -30,12 +30,12 @@ export const OfferValidationMessage = {
     max: 'Максимальное значение рейтинга -- 5',
   },
   type: {
-    invalidType: 'Тип предложения должен быть одним из вариантов: Apartment, House, Room or Hotel'
+    invalidType: 'Тип предложения должен быть одним из вариантов: apartment, house, room or hotel'
   },
   price: {
     invalidFormat: 'Цена должна быть числом',
     min: 'Минимальная цена -- 100',
-    max: 'Максимальная цена -- 200.000'
+    max: 'Максимальная цена -- 100.000'
   },
   rooms: {
     invalidFormat: 'Поле rooms должно быть числом',

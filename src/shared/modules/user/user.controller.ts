@@ -47,6 +47,7 @@ export class UserController extends BaseController {
       path: '/login',
       method: HttpMethod.Get,
       handler: this.checkAuthenticate,
+      middlewares: [new PrivateRouteMiddleware()],
     });
 
     this.addRoute({

@@ -24,6 +24,29 @@ import { UserService } from '../user/user-service.interface.ts';
 import { StatusCodes } from 'http-status-codes';
 import { Config } from '../../libs/config/config.interface.ts';
 import { RestSchema } from '../../libs/config/index.ts';
+import { OfferCityEnum, OfferCityType } from '../../types/index.ts';
+
+const parseOfferLimit = (value: unknown): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const limit = Number(value);
+
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new HttpError(
+      StatusCodes.BAD_REQUEST,
+      'Параметр limit должен быть положительным целым числом',
+      'OfferController'
+    );
+  }
+
+  return limit;
+};
+
+const isOfferCity = (value: unknown): value is OfferCityType =>
+  typeof value === 'string' &&
+  (Object.values(OfferCityEnum) as string[]).includes(value);
 
 @injectable()
 export class OfferController extends BaseController {
@@ -56,6 +79,23 @@ export class OfferController extends BaseController {
       method: HttpMethod.Post,
       handler: this.create,
       middlewares: [new PrivateRouteMiddleware(), new ValidateDtoMiddleware(CreateOfferDto)],
+    });
+
+    this.addRoute({
+      path: '/premium',
+      method: HttpMethod.Get,
+      handler: this.getPremium,
+      middlewares: [this.pathTransformerMiddleware],
+    });
+
+    this.addRoute({
+      path: '/me/favorites',
+      method: HttpMethod.Get,
+      handler: this.favorites,
+      middlewares: [
+        new PrivateRouteMiddleware(),
+        this.pathTransformerMiddleware,
+      ],
     });
 
     this.addRoute({
@@ -96,27 +136,22 @@ export class OfferController extends BaseController {
       path: '/:offerId/favorite',
       method: HttpMethod.Post,
       handler: this.postFavorite,
-      middlewares: [new PrivateRouteMiddleware()]
+      middlewares: [
+        new PrivateRouteMiddleware(),
+        new ValidateObjectMiddleware('offerId'),
+        new DocumentExistsMiddleware(offerService, 'Offer', 'offerId')
+      ]
     });
 
     this.addRoute({
       path: '/:offerId/favorite',
       method: HttpMethod.Delete,
       handler: this.deleteFavorite,
-      middlewares: [new PrivateRouteMiddleware()]
-    });
-
-    this.addRoute({
-      path: '/premium',
-      method: HttpMethod.Get,
-      handler: this.getPremium,
-    });
-
-    this.addRoute({
-      path: '/me/favorites',
-      method: HttpMethod.Get,
-      handler: this.favorites,
-      middlewares: [new PrivateRouteMiddleware()],
+      middlewares: [
+        new PrivateRouteMiddleware(),
+        new ValidateObjectMiddleware('offerId'),
+        new DocumentExistsMiddleware(offerService, 'Offer', 'offerId')
+      ]
     });
 
     this.addRoute({
@@ -159,23 +194,46 @@ export class OfferController extends BaseController {
     };
   }
 
-  public async index(req: Request, res: Response): Promise<void> {
-    const offers = await this.offerService.find();
-    let favoriteIds: string[] = [];
-    if (req.tokenPayload) {
-      favoriteIds = await this.userService.getFavoriteIds(req.tokenPayload.id);
+  private async assertOfferAuthor(offerId: string, userId: string): Promise<void> {
+    const offer = await this.offerService.findByOfferId(offerId);
+
+    if (!offer || offer.authorId !== userId) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'Можно редактировать или удалять только свои предложения',
+        'OfferController'
+      );
+    }
+  }
+
+  private async getFavoriteIds(req: Request): Promise<string[]> {
+    if (!req.tokenPayload) {
+      return [];
     }
 
-    const offerWithFavotiresFlag = offers.map((offer) => {
-      const offerObject = this.getOfferRdoData(offer);
-      const { id } = offerObject;
+    return this.userService.getFavoriteIds(req.tokenPayload.id);
+  }
 
-      return {
-        ...offerObject,
-        isFavorite: typeof id === 'string' && favoriteIds.includes(id),
-      };
-    });
-    const responseData = fillDTO(OfferRdo, offerWithFavotiresFlag);
+  private withFavoriteFlag(
+    offer: { toObject: () => Record<string, unknown> },
+    favoriteIds: string[]
+  ) {
+    const offerObject = this.getOfferRdoData(offer);
+    const { id } = offerObject;
+
+    return {
+      ...offerObject,
+      isFavorite: typeof id === 'string' && favoriteIds.includes(id),
+    };
+  }
+
+  public async index(req: Request, res: Response): Promise<void> {
+    const offers = await this.offerService.find(parseOfferLimit(req.query.limit));
+    const favoriteIds = await this.getFavoriteIds(req);
+    const offersWithFavoritesFlag = offers.map((offer) =>
+      this.withFavoriteFlag(offer, favoriteIds)
+    );
+    const responseData = fillDTO(OfferRdo, offersWithFavoritesFlag);
     this.ok(res, responseData);
   }
 
@@ -204,12 +262,17 @@ export class OfferController extends BaseController {
     this.logger.info('req.url:', req.url);
     const id = getId(req.params);
     const offer = await this.offerService.findByOfferId(id);
-    const responseData = fillDTO(OfferRdo, offer ? this.getOfferRdoData(offer) : offer);
+    const favoriteIds = await this.getFavoriteIds(req);
+    const responseData = fillDTO(
+      OfferRdo,
+      offer ? this.withFavoriteFlag(offer, favoriteIds) : offer
+    );
     this.ok(res, responseData);
   }
 
   public async patch(req: PatchOfferRequest, res: Response): Promise<void> {
     const id = getId(req.params);
+    await this.assertOfferAuthor(id, req.tokenPayload.id);
     const result = await this.offerService.updateById(id, req.body);
     const responseData = fillDTO(OfferRdo, result ? this.getOfferRdoData(result) : result);
     this.ok(res, responseData);
@@ -217,13 +280,28 @@ export class OfferController extends BaseController {
 
   public async delete(req: PatchOfferRequest, res: Response): Promise<void> {
     const id = getId(req.params);
-    const result = await this.offerService.deleteById(id);
-    this.ok(res, result);
+    await this.assertOfferAuthor(id, req.tokenPayload.id);
+    await this.offerService.deleteById(id);
+    this.noContent(res);
   }
 
-  public async getPremium(_req: Request, res: Response): Promise<void> {
-    const offers = await this.offerService.findPremium();
-    const responseData = fillDTO(OfferRdo, offers.map((offer) => this.getOfferRdoData(offer)));
+  public async getPremium(req: Request, res: Response): Promise<void> {
+    const { city } = req.query;
+
+    if (!isOfferCity(city)) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'Параметр city должен быть одним из городов: Paris, Cologne, Brussels, Amsterdam, Hamburg, Dusseldorf',
+        'OfferController'
+      );
+    }
+
+    const offers = await this.offerService.findPremiumByCity(city);
+    const favoriteIds = await this.getFavoriteIds(req);
+    const responseData = fillDTO(
+      OfferRdo,
+      offers.map((offer) => this.withFavoriteFlag(offer, favoriteIds))
+    );
     this.ok(res, responseData);
   }
 
@@ -241,10 +319,17 @@ export class OfferController extends BaseController {
 
   public async favorites(req: Request, res: Response): Promise<void> {
     const result = await this.userService.getFavorites(req.tokenPayload.id);
-    this.ok(res, result);
+    const responseData = fillDTO(
+      OfferRdo,
+      result.map((offer) => ({
+        ...this.getOfferRdoData(offer as { toObject: () => Record<string, unknown> }),
+        isFavorite: true,
+      }))
+    );
+    this.ok(res, responseData);
   }
 
-  public async uploadPreview({ params, file }: Request, res: Response) {
+  public async uploadPreview({ params, file, tokenPayload }: Request, res: Response) {
     if (!file || typeof params.offerId !== 'string') {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
@@ -252,6 +337,8 @@ export class OfferController extends BaseController {
         'OfferController'
       );
     }
+
+    await this.assertOfferAuthor(params.offerId, tokenPayload.id);
 
     const updateDto = { preview: file.filename };
     const result = await this.offerService.updateById(
@@ -262,7 +349,7 @@ export class OfferController extends BaseController {
     this.created(res, fillDTO(OfferRdo, result ? this.getOfferRdoData(result) : result));
   }
 
-  public async uploadImages({ params, files }: Request, res: Response) {
+  public async uploadImages({ params, files, tokenPayload }: Request, res: Response) {
     const uploadedFiles = files as Express.Multer.File[];
     if (
       !uploadedFiles ||
@@ -275,6 +362,8 @@ export class OfferController extends BaseController {
         'OfferController'
       );
     }
+
+    await this.assertOfferAuthor(params.offerId, tokenPayload.id);
 
     const offer = await this.offerService.findByOfferId(params.offerId);
 

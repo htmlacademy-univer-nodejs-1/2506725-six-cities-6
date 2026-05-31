@@ -9,10 +9,10 @@ export const OfferCityEnum = {
 export type OfferCityType = (typeof OfferCityEnum)[keyof typeof OfferCityEnum];
 
 export const OfferTypeEmum = {
-  Apartment: 'Apartment',
-  House: 'House',
-  Room: 'Room',
-  Hotel: 'Hotel',
+  Apartment: 'apartment',
+  House: 'house',
+  Room: 'room',
+  Hotel: 'hotel',
 } as const;
 export type OfferType = (typeof OfferTypeEmum)[keyof typeof OfferTypeEmum];
 

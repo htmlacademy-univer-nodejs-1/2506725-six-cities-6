@@ -126,9 +126,13 @@ export const fetchPremiumOffers = createAsyncThunk<Offer[], string, { extra: Ext
   Action.FETCH_PREMIUM_OFFERS,
   async (cityName, { extra }) => {
     const { api } = extra;
-    const { data } = await api.get(ApiRoute.Offers);
+    const { data } = await api.get(ApiRoute.PremiumOffers, {
+      params: {
+        city: cityName,
+      },
+    });
 
-    return adaptOffers(data).filter((offer) => offer.isPremium && offer.city.name === cityName);
+    return adaptOffers(data);
   });
 
 export const fetchComments = createAsyncThunk<Comment[], Offer['id'], { extra: Extra }>(
@@ -191,6 +195,7 @@ export const loginUser = createAsyncThunk<Pick<User, 'email'> & { id: string }, 
       name: data.name ?? payload?.name ?? email,
       email: data.email ?? payload?.email ?? email,
     }, userId);
+    dispatch(fetchOffers());
     dispatch(fetchFavoriteOffers());
     history.push(AppRoute.Root);
 
@@ -202,11 +207,12 @@ export const loginUser = createAsyncThunk<Pick<User, 'email'> & { id: string }, 
 
 export const logoutUser = createAsyncThunk<void, undefined, { extra: Extra }>(
   Action.LOGOUT_USER,
-  async (_, { extra }) => {
+  async (_, { extra, dispatch }) => {
     const { api } = extra;
     await api.post(ApiRoute.Logout);
 
     Token.drop();
+    dispatch(fetchOffers());
   });
 
 export const registerUser = createAsyncThunk<void, UserRegister, { extra: Extra }>(
@@ -229,6 +235,7 @@ export const postComment = createAsyncThunk<Comment, CommentAuth, { extra: Extra
     });
 
     dispatch(fetchOffer(id));
+    dispatch(fetchOffers());
 
     return adaptComment(data);
   });

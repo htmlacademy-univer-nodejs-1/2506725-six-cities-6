@@ -1,8 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 import type { SiteData } from '../../types/state';
+import type { Offer } from '../../types/types';
 import { StoreSlice, SubmitStatus } from '../../const';
-import { fetchOffers, fetchOffer, fetchPremiumOffers, fetchComments, postComment, postFavorite, fetchFavoriteOffers, postOffer, editOffer, deleteOffer } from '../action';
+import { fetchOffers, fetchOffer, fetchPremiumOffers, fetchComments, postComment, postFavorite, fetchFavoriteOffers, postOffer, editOffer, deleteOffer, loginUser, logoutUser, fetchUserStatus } from '../action';
 
 const initialState: SiteData = {
   offers: [],
@@ -14,6 +15,34 @@ const initialState: SiteData = {
   premiumOffers: [],
   comments: [],
   commentStatus: SubmitStatus.Still,
+};
+
+const updateFavoriteFlag = (offer: Offer, isFavorite: boolean): Offer =>
+  offer.isFavorite === isFavorite ? offer : { ...offer, isFavorite };
+
+const resetFavoriteFlags = (state: SiteData): void => {
+  state.favoriteOffers = [];
+  state.offers = state.offers.map((offer) => updateFavoriteFlag(offer, false));
+  state.premiumOffers = state.premiumOffers.map((offer) => updateFavoriteFlag(offer, false));
+
+  if (state.offer) {
+    state.offer = updateFavoriteFlag(state.offer, false);
+  }
+};
+
+const syncFavoriteFlags = (state: SiteData): void => {
+  const favoriteIds = new Set(state.favoriteOffers.map((offer) => offer.id));
+
+  state.offers = state.offers.map((offer) =>
+    updateFavoriteFlag(offer, favoriteIds.has(offer.id))
+  );
+  state.premiumOffers = state.premiumOffers.map((offer) =>
+    updateFavoriteFlag(offer, favoriteIds.has(offer.id))
+  );
+
+  if (state.offer) {
+    state.offer = updateFavoriteFlag(state.offer, favoriteIds.has(state.offer.id));
+  }
 };
 
 export const siteData = createSlice({
@@ -37,6 +66,7 @@ export const siteData = createSlice({
       })
       .addCase(fetchFavoriteOffers.fulfilled, (state, action) => {
         state.favoriteOffers = action.payload;
+        syncFavoriteFlags(state);
         state.isFavoriteOffersLoading = false;
       })
       .addCase(fetchFavoriteOffers.rejected, (state) => {
@@ -54,6 +84,7 @@ export const siteData = createSlice({
       })
       .addCase(fetchPremiumOffers.fulfilled, (state, action) => {
         state.premiumOffers = action.payload;
+        syncFavoriteFlags(state);
       })
       .addCase(fetchComments.fulfilled, (state, action) => {
         state.comments = action.payload;
@@ -101,6 +132,15 @@ export const siteData = createSlice({
         } else {
           state.favoriteOffers = state.favoriteOffers.filter((favoriteOffer) => favoriteOffer.id !== id);
         }
+      })
+      .addCase(loginUser.fulfilled, (state) => {
+        resetFavoriteFlags(state);
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        resetFavoriteFlags(state);
+      })
+      .addCase(fetchUserStatus.rejected, (state) => {
+        resetFavoriteFlags(state);
       });
   }
 });

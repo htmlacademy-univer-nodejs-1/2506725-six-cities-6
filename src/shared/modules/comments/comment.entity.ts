@@ -10,7 +10,7 @@ export class CommentEntity extends defaultClasses.TimeStamps implements CommentT
     @prop({
       required: true,
       default: '',
-      minlength: 20,
+      minlength: 5,
       maxlength: 1024,
       type: () => String,
     })

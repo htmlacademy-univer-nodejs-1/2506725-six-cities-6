@@ -2,7 +2,13 @@ import { Expose } from 'class-transformer';
 
 export class CommentRdo {
     @Expose()
-  public text: string;
+  public id: string;
+
+    @Expose()
+    public text: string;
+
+    @Expose()
+    public date: Date;
 
     @Expose()
     public rating: number;

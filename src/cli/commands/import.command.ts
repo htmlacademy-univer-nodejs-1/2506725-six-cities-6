@@ -7,7 +7,6 @@ import { DatabaseClient } from '../../shared/libs/database-client/database-clien
 import { Logger } from '../../shared/libs/logger/logger.interface.js';
 import { DefaultUserService } from '../../shared/modules/user/default-user.service.js';
 import { MongoDatabaseClient } from '../../shared/libs/database-client/mongo.database-client.js';
-import { DEFAULT_DB_PORT } from './command.constant.js';
 import { OfferService } from '../../shared/modules/offer/offer-service.interface.js';
 import { ConsoleLogger } from '../../shared/libs/logger/console.logger.js';
 import { DefaultOfferService } from '../../shared/modules/offer/default-offer.service.js';
@@ -90,14 +89,24 @@ export class ImportCommand implements Command {
     await this.databaseClient.disconnect();
   }
 
-  public async execute(
-    filePath: string,
-    login: string,
-    password: string,
-    host: string,
-    dbname: string
-  ): Promise<void> {
-    const uri = getMongoURI(login, password, host, DEFAULT_DB_PORT, dbname);
+  private getRequiredEnv(name: string): string {
+    const value = process.env[name];
+
+    if (!value) {
+      throw new Error(`Environment variable ${name} is required`);
+    }
+
+    return value;
+  }
+
+  public async execute(filePath: string): Promise<void> {
+    const uri = getMongoURI(
+      this.getRequiredEnv('DB_USER'),
+      this.getRequiredEnv('DB_PASSWORD'),
+      this.getRequiredEnv('DB_HOST'),
+      this.getRequiredEnv('DB_PORT'),
+      this.getRequiredEnv('DB_NAME')
+    );
 
     await this.databaseClient.connect(uri);
     const fileReader = new TsvFileReader(filePath.trim());

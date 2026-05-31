@@ -10,6 +10,24 @@ npm install
 
 Команда запустит процесс установки зависимостей проекта из **npm**.
 
+### Переменные окружения
+
+Все переменные окружения для REST API задаются в `.env`. Пример заполнения находится в `.env.example`.
+
+```text
+PORT=4000 — порт REST API
+HOST=localhost — хост REST API для формирования ссылок на статические файлы
+DB_HOST=127.0.0.1 — адрес MongoDB
+DB_PORT=27017 — порт MongoDB
+DB_NAME=six-cities — имя базы данных MongoDB
+DB_USER=admin — пользователь MongoDB
+DB_PASSWORD=test — пароль пользователя MongoDB
+SALT=secret — соль для хеширования паролей
+JWT_SECRET=secret — секрет для JWT-токенов
+UPLOAD_DIRECTORY=upload — директория загружаемых файлов
+STATIC_DIRECTORY_PATH=static — директория статических файлов
+```
+
 ### Сценарии
 
 В `package.json` предопределено несколько сценариев.
@@ -21,6 +39,22 @@ npm run compile
 ```
 
 Создаст директорию `dist` и скомпилирует проект.
+
+#### Запустить CLI
+
+```bash
+npm run cli -- --help
+```
+
+Запускает CLI приложения. Поддерживаются команды `--help`, `--version`, `--generate <n> <path> <url>` и `--import <path>`.
+
+#### Запустить dev-сервер REST API
+
+```bash
+npm run start::dev
+```
+
+Запускает REST API в режиме разработки через `nodemon`.
 
 #### Удалить скомпилированный проект
 
@@ -71,6 +105,14 @@ npm start
 ```
 
 В процессе запуска проекта будет выполнен процесс «Сборки проекта» и запуска результирующего кода.
+
+#### Запустить mock json-server
+
+```bash
+npm run json-server
+```
+
+Запускает mock-сервер с данными из `mocks/mock-server-data.json`.
 
 ## Структура проекта
 

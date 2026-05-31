@@ -47,10 +47,10 @@
             "https://images.example.com/photo-24.jpg"
         ],
         "types": [
-            "Apartment",
-            "Room",
-            "House",
-            "Hotel"
+            "apartment",
+            "room",
+            "house",
+            "hotel"
         ],
         "features": [
             "Breakfast",

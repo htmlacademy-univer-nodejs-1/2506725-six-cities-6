@@ -55,7 +55,7 @@ export class UpdateOfferDto {
     @IsOptional()
     @IsInt({ message: OfferValidationMessage.price.invalidFormat })
     @Min(100, { message: OfferValidationMessage.price.min })
-    @Max(200000, { message: OfferValidationMessage.price.max })
+    @Max(100000, { message: OfferValidationMessage.price.max })
     public price?: number;
 
     @IsOptional()

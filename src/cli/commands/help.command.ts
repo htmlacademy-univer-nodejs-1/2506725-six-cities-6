@@ -15,7 +15,7 @@ export class HelpCommand implements Command {
 
             --version:                   # выводит номер версии
             --help:                      # печатает этот текст
-            --import <path> <login> <password> <host> <dbname> <salt>: Импортирует файлы из TSV файла в MongoDB
+            --import <path>:             # импортирует данные из TSV
             --generate <n> <path> <url>  # генерирует произвольное количество тестовых данных
     `));
   }

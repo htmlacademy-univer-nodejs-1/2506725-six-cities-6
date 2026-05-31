@@ -81,4 +81,4 @@ const Card = ({
   );
 };
 
-export default memo(Card, (prevProps, nextProps) => prevProps.isFavorite === nextProps.isFavorite);
+export default memo(Card);

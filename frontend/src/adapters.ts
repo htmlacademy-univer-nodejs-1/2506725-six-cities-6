@@ -113,7 +113,7 @@ const getImageUrl = (image?: string): string => {
 };
 
 const getType = (type?: string): Type => {
-  const normalizedType = type ? `${type[0].toUpperCase()}${type.slice(1).toLowerCase()}` : TYPES[0];
+  const normalizedType = type ? type.toLowerCase() : TYPES[0];
 
   if (TYPES.includes(normalizedType as Type)) {
     return normalizedType as Type;
